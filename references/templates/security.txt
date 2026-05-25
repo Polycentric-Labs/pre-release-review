@@ -1,0 +1,11 @@
+# RFC 9116 security.txt — deploy at https://<PROJECT-DOMAIN>/.well-known/security.txt
+# (Bootstrap-emitted; 1B in v5.1; closes OSPS-VM-02 at Maturity 1)
+
+Contact: mailto:<security-contact-email>
+Contact: https://github.com/<OWNER>/<REPO>/security/advisories/new
+Expires: <YYYY-12-31T23:59:59Z>
+Encryption: <PGP_KEY_URL>
+Acknowledgments: https://github.com/<OWNER>/<REPO>/security/advisories
+Preferred-Languages: en
+Canonical: https://<PROJECT-DOMAIN>/.well-known/security.txt
+Policy: https://github.com/<OWNER>/<REPO>/blob/main/SECURITY.md

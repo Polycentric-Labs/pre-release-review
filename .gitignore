@@ -1,0 +1,46 @@
+# Local-only audit artifacts (skill working directory; not part of the public repo)
+_audits/
+_archive/
+
+# Per-run telemetry from operator's own machine
+.local/
+
+# Python cruft (the skill ships .md + a single Python helper, but contributors
+# may run scripts/control_chart.py locally)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.venv/
+venv/
+env/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.sublime-*
+
+# Secret-shape files (defense in depth — none of these should ever live in a skill
+# repo, but the gate ensures they never sneak in via accidental copy)
+.env
+.env.*
+!.env.example
+!.env.template
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets/
+credentials.json

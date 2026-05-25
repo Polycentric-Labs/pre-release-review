@@ -1,0 +1,83 @@
+# Pre-tag CHANGELOG-presence gate.
+#
+# Skill-shipped template (v5 first-run-bootstrap deliverable). Fires
+# on every push to main or PR targeting main that touches version-
+# sensitive files. Verifies the workspace [project] version has a
+# matching CHANGELOG.md block, so tag-time release.yml can't fail at
+# the CHANGELOG-extract step.
+#
+# Workflow-layer counterpart to skill-layer pre-push gate Row 17.
+
+name: verify-changelog
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "pyproject.toml"
+      - "package.json"
+      - "Cargo.toml"
+      - "CHANGELOG.md"
+      - "scripts/extract_changelog_block.py"
+      - ".github/workflows/verify-changelog.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "pyproject.toml"
+      - "package.json"
+      - "Cargo.toml"
+      - "CHANGELOG.md"
+      - "scripts/extract_changelog_block.py"
+      - ".github/workflows/verify-changelog.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Extract workspace version
+        id: workspace-version
+        run: |
+          if [ -f pyproject.toml ]; then
+            version="$(python -c 'import tomllib; print(tomllib.load(open(\"pyproject.toml\",\"rb\"))[\"project\"][\"version\"])')"
+          elif [ -f package.json ]; then
+            version="$(node -e 'console.log(require(\"./package.json\").version)')"
+          elif [ -f Cargo.toml ]; then
+            version="$(python -c 'import tomllib; print(tomllib.load(open(\"Cargo.toml\",\"rb\"))[\"package\"][\"version\"])')"
+          else
+            echo "::error::No supported manifest file found (pyproject.toml / package.json / Cargo.toml)"
+            exit 1
+          fi
+          echo "Workspace version: $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Verify CHANGELOG block presence + size
+        run: |
+          version="${{ steps.workspace-version.outputs.version }}"
+          if ! python scripts/extract_changelog_block.py "$version" > extracted-body.md 2>/tmp/extract-err.txt; then
+            echo "::error::extract_changelog_block.py failed for [$version]"
+            cat /tmp/extract-err.txt
+            echo ""
+            echo "WHAT TO DO: Add a '## [$version] - YYYY-MM-DD' block to CHANGELOG.md."
+            echo "WHY: release.yml will fail at the CHANGELOG-extract step otherwise."
+            exit 1
+          fi
+          body_size=$(wc -c < extracted-body.md)
+          echo "Extracted body: $body_size bytes"
+          if [ "$body_size" -lt 1500 ]; then
+            echo "::error::CHANGELOG block for [$version] is suspiciously small ($body_size bytes < 1500)"
+            cat extracted-body.md
+            exit 1
+          fi
+          echo "::notice::CHANGELOG block for [$version] looks healthy ($body_size bytes)."

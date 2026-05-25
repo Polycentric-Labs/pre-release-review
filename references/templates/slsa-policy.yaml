@@ -1,0 +1,65 @@
+# SLSA v1.2 policy declaration (bootstrap-emitted; S2 in v5.1)
+#
+# Declares the project's target SLSA tracks + levels. Read by the pre-release-review
+# Step 7.3 / 7.5 verification stage to assert what the project IS supposed to satisfy,
+# vs what it actually verifies. Honest-gap-aware: solo-dev projects DECLARE Source L3
+# as a structural honest-gap rather than fake-attesting.
+#
+# Reference: https://slsa.dev/spec/v1.2/
+
+project_name: "<REPLACE_WITH_PROJECT_NAME>"
+policy_version: 1
+last_reviewed: "<YYYY-MM-DD>"  # Bump on each /pre-release-review cycle
+
+# ===== Source Track (NEW in v1.2) =====
+source_track:
+  target_level: "L2"  # L1 / L2 / L3 — see honest_gaps for solo-dev structural exception
+  verifications:
+    L1:
+      source_available: true       # Public GitHub repo
+      source_retained: true        # GitHub retention policy
+    L2:
+      signed_commits: false        # CHANGE TO true if you've enabled commit signing
+      branch_protection: true      # Step 1.5.1 check verifies this
+    L3:
+      two_person_review: "honest_gap"  # Solo-dev structural impossibility — see honest_gaps[]
+
+# ===== Build Track (unchanged from v1.0) =====
+build_track:
+  target_level: "L3"
+  verifications:
+    L1:
+      build_script_exists: true
+    L2:
+      hosted_build_service: true   # GitHub Actions
+      provenance_generated: true
+    L3:
+      hardened_build_platform: true
+      provenance_isolated: true
+
+# ===== Provenance Track =====
+provenance_track:
+  target_level: "L3"
+  format: "in-toto attestation v1"
+  verifications:
+    PEP_740_attestations: true     # Python projects via OIDC Trusted Publisher
+    cosign_signatures: true        # Container images
+    sbom_emission: true            # CycloneDX JSON
+    verified_at_step: "7.3 + 7.5"
+
+# ===== Honest gaps (per v5.1 compliance-mapping.md §honest-gap field) =====
+honest_gaps:
+  - control: "Source L3 (two-person review)"
+    reason: "solo-dev structural impossibility; AI review (Claude Code, /code-review) is partial mitigation only — see Apiiro 2024 + CodeRabbit 2024 + Cerbos 2024 cited in references/bypass-protocol.md"
+    mitigations:
+      - "auto-fire /security-review (3 invocations per release)"
+      - "auto-fire /code-review (4 triggers)"
+      - "automated SAST + SCA + DAST + Scorecard pre-tag"
+      - "per-run JSON freshness gate (Guideline #12)"
+
+# ===== AI-toolchain disclosure (218A PO.3.x) =====
+ai_assistance_disclosed:
+  - tool: "Claude Code"
+    role: "code generation, refactoring, /security-review, /code-review"
+    approved: true
+    approval_record: "<REPLACE_WITH_INTERNAL_RECORD_OR_GOVERNANCE_DOC_REF>"
