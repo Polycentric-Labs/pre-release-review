@@ -148,23 +148,28 @@ When staging any sub-pass that touches >5 files or >300 LOC:
     3. **readme_size_guard** — `README.md` is at or below the byte
        budget declared in the script (catches README bloat that
        degrades the first-impression read).
-    4. **tier_vocab_audit** — no Pro / Enterprise / Federal commercial-
-       tier vocabulary appears in public files. Configurable forbidden-
-       pattern set + per-file allowlist for legitimate prose
-       (positioning docs that need to *discuss* the tier model).
+    4. **phrase_audit** — no forbidden-phrase matches appear in
+       tracked public files. Pattern set loaded at runtime from a
+       project-local gitignored config (Evidentia ships its set at
+       `private/check-docs-health-patterns.yaml`); the public-tracked
+       script source contains zero literal patterns. If the config is
+       absent the check emits one advisory WARN and the other 3 doc-
+       health invariants still run. Per-file allowlist for legitimate
+       prose (positioning docs that need to *discuss* the topic the
+       set is filtering for).
     5. **private_path_leak** — no public `.md` file links to
-       `private/` paths (the gitignored commercial-strategy directory
-       per `~/.claude/CLAUDE.md`).
+       `private/` paths (the gitignored strategy directory per
+       `~/.claude/CLAUDE.md`).
 
     **Publicly-facing-surface checks (3; NEW v5.1.3)**:
 
     6. **commit_msg_audit** — scans `git log <cutoff>..HEAD` bodies
-       for the same forbidden-phrase regex set as `tier_vocab_audit`.
-       Cutoff SHA `32df7fa` (Allen 2026-05-27 decision) treats earlier
-       history as immutable; v0.10.5 tag + earlier are allowlisted.
-       Commit messages are publicly visible on the GitHub repo page +
-       `git log` clones + release-note auto-generators — they need the
-       same tier-vocab discipline as the tracked `.md` files.
+       for the same regex set as `phrase_audit`. Cutoff SHA `f1dac4e`
+       (Allen 2026-05-27 decision) treats earlier history as
+       immutable; v0.10.5 tag + earlier are allowlisted. Commit
+       messages are publicly visible on the GitHub repo page + `git
+       log` clones + release-note auto-generators — they need the
+       same prose-discipline as the tracked `.md` files.
     7. **tag_msg_audit** — scans annotated tag bodies for the same
        regex set. Older tags are allowlisted as immutable because a
        force-update would break cosign signatures bound to those SHAs
@@ -212,35 +217,37 @@ When staging any sub-pass that touches >5 files or >300 LOC:
 
     **If the script doesn't exist in the project**: Evidentia v0.10.7+
     ships it at `scripts/check_docs_health.py` — the v5.1.2 baseline
-    (5 doc-health invariants) lands at Evidentia commit `32df7fa` and
+    (4 doc-health invariants) lands at Evidentia commit `32df7fa` and
     the v5.1.3 extension (3 publicly-facing-surface checks + the
     companion commit-msg hook) lands at Evidentia commit `f1dac4e`.
-    Other projects need to author their own equivalent — the skill
-    does NOT ship the script itself because the byte budget,
-    allowlists, forbidden-pattern sets, and cutoff SHA are
-    project-specific. If missing, advise the operator to copy the
-    Evidentia reference implementation as a starting point and tune
-    the allowlists + cutoff SHA. SKIP the gate with a yellow flag
-    when the script is absent rather than blocking; surface "5.D.3
-    SKIPPED — `scripts/check_docs_health.py` not found; recommended
-    to author one".
+    The v5.1.4 refactor (patterns externalized to gitignored config)
+    lands in the next Evidentia commit. Other projects need to author
+    their own equivalent — the skill does NOT ship the script itself
+    because the byte budget, allowlists, pattern sets, and cutoff
+    SHA are project-specific. If missing, advise the operator to copy
+    the Evidentia reference implementation as a starting point and
+    tune the allowlists + cutoff SHA. SKIP the gate with a yellow
+    flag when the script is absent rather than blocking; surface
+    "5.D.3 SKIPPED — `scripts/check_docs_health.py` not found;
+    recommended to author one".
 
     **Rationale**: prevents docs-only regressions (broken cross-links,
-    tier-vocab leaks, README bloat, private-path leaks) AND
+    forbidden-phrase matches, README bloat, private-path leaks) AND
     publicly-facing-surface regressions (forbidden phrasing in
     commit / tag / release-body text) from shipping silently in a
     tag. Allen's 2026-05-27 directive added the doc-health baseline
     after the v0.10.7 docs-cleanup cycle surfaced ~50 broken
-    cross-links + 35 tier-vocab leaks; the same-day v5.1.3 follow-on
-    directive extended the gate to cover the publicly-facing surfaces
-    because commit / tag / release-body text are written under the
-    same prose-discipline rules as the tracked `.md` files but were
-    not previously covered by any automated check. Docs-only +
-    surface-text regressions are particularly insidious because the
-    test gate (Row 6) and the security review (Steps 3 / 4 / 6.C) do
-    not catch them — the prose compiles fine and runs no code.
-    Without a dedicated invariant gate covering both surfaces, the
-    failure mode is silent decay over many releases.
+    cross-links + 35 forbidden-phrase matches; the same-day v5.1.3
+    follow-on directive extended the gate to cover the publicly-
+    facing surfaces because commit / tag / release-body text are
+    written under the same prose-discipline rules as the tracked
+    `.md` files but were not previously covered by any automated
+    check. Docs-only + surface-text regressions are particularly
+    insidious because the test gate (Row 6) and the security review
+    (Steps 3 / 4 / 6.C) do not catch them — the prose compiles fine
+    and runs no code. Without a dedicated invariant gate covering
+    both surfaces, the failure mode is silent decay over many
+    releases.
 
     **Skill-resolution-status**: Resolved at skill v5.1.3 (2026-05-27;
     v5.1.2 baseline + v5.1.3 publicly-facing-surface extension).

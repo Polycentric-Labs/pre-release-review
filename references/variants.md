@@ -63,7 +63,7 @@ When to invoke DMADV vs the standard Pre-tag variant:
 |---|---|
 | Promoting 0.x → 1.0 with formal API stability commitment | ✅ |
 | Bumping 1.x → 2.0 with breaking changes | ✅ |
-| Introducing a new commercial / regulatory tier (Pro / Federal / Enterprise) | ✅ |
+| Introducing a new paid product tier with materially different scope | ✅ |
 | Adding a new persona / use-case the product wasn't designed for | ✅ |
 | Patch / minor release within the current major | ❌ — use Pre-tag |
 | Same major version with refinements only | ❌ — use Pre-tag |

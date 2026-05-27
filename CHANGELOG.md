@@ -6,6 +6,39 @@ in this file.
 Versioning is calendar-based (`YYYY.MM.DD-v<major>[.<minor>[.<patch>]]`)
 — the date reflects the design lock-in date, not the publish date.
 
+## [2026.05.27-v5.1.4] — 2026-05-27
+
+**Theme**: Reflect the Evidentia-side refactor that externalizes the
+phrase-audit pattern set out of the public-tracked script source.
+
+### Changed
+
+- **Step 5.D.3 description prose** — Rephrased to:
+  - rename the 4th invariant from the old descriptive identifier
+    to the topic-neutral `phrase_audit` (matching the renamed check
+    in the script);
+  - replace topic-specific descriptions of the pattern set with
+    topic-neutral phrasing ("forbidden-phrase matches" / "forbidden
+    phrases") wherever the specific subject of filtering isn't
+    load-bearing for the reader;
+  - update the cutoff SHA reference from `32df7fa` → `f1dac4e` (the
+    last commit containing literal patterns in public-tracked
+    Evidentia source);
+  - document the new fallback behavior: if the project under review
+    has no `private/check-docs-health-patterns.yaml`, the 4 phrase-
+    related checks emit one advisory WARN and the 4 doc-health
+    invariants still run normally;
+  - rename the bypass env var from `EVIDENTIA_ALLOW_TIER_VOCAB_IN_COMMIT`
+    → `EVIDENTIA_ALLOW_PHRASE_BYPASS` (legacy var still honored for
+    one cycle).
+
+### Rationale
+
+The v5.1.3 description prose itself contained the phrases the gate
+was designed to filter for, which leaked vocab via the skill list +
+the Skill tool's read-on-invocation. The v5.1.4 prose is neutral.
+The script invocation is unchanged.
+
 ## [2026.05.27-v5.1.3] — 2026-05-27
 
 **Theme**: Publicly-facing-surface extension of the v5.1.2 docs-health
@@ -25,9 +58,9 @@ annotated tag bodies, or GitHub Release bodies.
 ### Added (the 3 new publicly-facing-surface checks)
 
 - **commit_msg_audit** — scans `git log <cutoff>..HEAD` bodies for
-  the same forbidden-phrase regex set as `tier_vocab_audit`. Cutoff
-  SHA `32df7fa` (Allen 2026-05-27 decision) treats earlier history
-  as immutable; v0.10.5 tag + earlier are allowlisted.
+  the same regex set as `phrase_audit`. Cutoff SHA `f1dac4e` (Allen
+  2026-05-27 decision) treats earlier history as immutable;
+  v0.10.5 tag + earlier are allowlisted.
 - **tag_msg_audit** — scans annotated tag bodies for the same regex
   set. Older tags are allowlisted as immutable because a force-update
   would break cosign signatures bound to those SHAs.
@@ -79,8 +112,9 @@ from shipping silently in a tag.
      (code-fence-aware + per-file allowlist + per-line allowlist +
      wiki-stub auto-downgrade to WARN)
   3. **readme_size_guard** — `README.md` at or below byte budget
-  4. **tier_vocab_audit** — no Pro / Enterprise / Federal commercial-
-     tier vocabulary in public files (with per-file allowlist)
+  4. **phrase_audit** — no forbidden-phrase matches in tracked
+     public files (pattern set loaded from project-local gitignored
+     config; per-file allowlist for legitimate prose)
   5. **private_path_leak** — no public `.md` file links to `private/`
      paths
   Exits 0 on PASS / 2 on FAIL under `--strict`. Also supports
@@ -94,9 +128,9 @@ from shipping silently in a tag.
 ### Originating directive
 
 - **Allen's 2026-05-27 directive** (Evidentia v0.10.7 docs-cleanup
-  cycle): the cycle surfaced ~50 broken cross-links + 35 tier-vocab
-  leaks that would have shipped silently in the next tag without a
-  dedicated docs invariant gate. The existing pre-push gate rows
+  cycle): the cycle surfaced ~50 broken cross-links + 35 forbidden-
+  phrase matches that would have shipped silently in the next tag
+  without a dedicated docs invariant gate. The existing pre-push gate rows
   (test gate, security review, etc.) do not catch docs-only
   regressions because the prose compiles fine and runs no code. The
   v5.1.2 Step 5.D.3 gate plugs that hole. Project-side script ships
