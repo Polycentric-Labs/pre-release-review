@@ -41,9 +41,91 @@ When staging any sub-pass that touches >5 files or >300 LOC:
   (documentation-freshness) at Step 6.C. Forces zero stale docs at
   ship time without the operator having to remember which docs are
   in scope.
-- **5.D** — Deletion review (deprecated scripts, stale fixtures,
-  orphaned files); add `[DEPRECATED <date>]` headers to historical
-  one-shot scripts retained for transparency
+- **5.D** — Deletion review + pre-publish credential readiness.
+  - **5.D.1 Deletion review**: deprecated scripts, stale fixtures,
+    orphaned files; add `[DEPRECATED <date>]` headers to historical
+    one-shot scripts retained for transparency.
+  - **5.D.2 New-PyPI-project pending-publisher check** (NEW v5.1.1
+    per LL-V105-1; Evidentia v0.10.5 partial-publish incident
+    2026-05-26). For projects with a `pypi-trusted-publisher` target
+    in `.local/pre-release-review/publish-targets.yaml`, identify any
+    workspace package that did NOT exist on PyPI at the previous tag
+    and verify a pending publisher row is configured on PyPI's
+    dashboard BEFORE the tag is created. Trusted Publisher (OIDC)
+    cannot CREATE new PyPI projects — it can only publish to projects
+    that already exist or have a pending publisher row pre-resolved.
+    Failing this check at tag time is cheap (configure pending
+    publisher in PyPI UI, retry); failing it at `release.yml` runtime
+    is expensive (partial publish — already-uploaded version slots
+    are consumed irreversibly, recovery requires `gh run rerun
+    --failed` after manual UI fix).
+
+    **Detection algorithm**:
+    1. Resolve the workspace package list from
+       `publish-targets.yaml` → `targets[kind=pypi-trusted-publisher]
+       .packages[]`. For uv workspaces, cross-check against
+       `pyproject.toml` `[tool.uv.workspace] members` resolved to
+       per-package `name = "..."`.
+    2. For each package `<pkg>`, GET `https://pypi.org/pypi/<pkg>/json`:
+       - HTTP 200 → project exists on PyPI; Trusted Publisher will
+         publish without operator action. PASS.
+       - HTTP 404 → project does NOT yet exist on PyPI. Treat as
+         **NEW PyPI project**. The Trusted Publisher upload will fail
+         with HTTP 400 (`Non-user identities cannot create new
+         projects`) unless a pending publisher row is configured.
+       - Other status (5xx / network error) → SKIP with a yellow flag
+         and surface "PyPI unreachable; cannot verify <pkg>; operator
+         must manually verify before tag" to the operator. Retry once
+         after 30s before falling through.
+    3. For every package flagged NEW, surface the manual-verify
+       prompt to the operator (see below). Block the Step 5.D gate
+       until the operator confirms each pending publisher row in turn,
+       or until the operator types one of the verbatim bypass phrases
+       per [bypass-protocol.md](bypass-protocol.md).
+
+    **Manual-verify prompt (one per NEW package)**:
+    ```
+    NEW PyPI PROJECT DETECTED: <pkg>
+    PyPI returned 404 — this package has never been published before.
+
+    Trusted Publisher (OIDC) cannot create new PyPI projects. A
+    "pending publisher" row must be configured BEFORE `release.yml`
+    fires, or the publish step will fail with HTTP 400 and leave a
+    partial-publish artifact (LL-V105-1).
+
+    Open: https://pypi.org/manage/account/publishing/
+    Configure a pending publisher with:
+      PyPI project name : <pkg>
+      Owner             : <owner from publish-targets.yaml>
+      Repository        : <repo>
+      Workflow filename : <release workflow filename, typically release.yml>
+      Environment name  : <publish environment, typically `pypi`>
+
+    Type CONFIRMED <pkg> once the pending publisher row exists.
+    (Or bypass with `STALE REVIEW ACCEPTED — <reason>` per
+    bypass-protocol.md §B2.)
+    ```
+
+    **Decision gate**:
+    - All NEW packages CONFIRMED → 5.D.2 PASS; record `new_pypi_projects:
+      [{pkg, confirmed_at}, ...]` in the per-run JSON; advance to 5.E.
+    - Any NEW package un-CONFIRMED at gate close → 5.D.2 BLOCK; refuse
+      to advance to 5.E (and therefore refuse to surface `git tag` at
+      Step 6.F).
+    - PyPI API rate-limit (HTTP 429 on retry) → SKIP with explicit
+      yellow flag; surface "rate-limited; operator must verify NEW
+      packages manually; treat as soft-fail" and continue. Operator
+      should re-run 5.D.2 standalone after rate-limit cooldown (PyPI
+      JSON API limits are documented but not hard-published; typical
+      cooldown is < 5 min for low-volume requests).
+
+    **Skip when**: no `pypi-trusted-publisher` target in
+    `publish-targets.yaml` (e.g., a project that publishes only to
+    `npm` / `cargo` / `vercel`). Other publish kinds may grow analogous
+    pre-flight checks in future skill versions; npm projects in
+    particular have a similar "new package on a scoped namespace
+    requires `--access public` on first publish" trap that is NOT
+    covered here.
 - **5.E** — Doc merging review (consolidate identical-purpose docs)
 - **5.F** — UI/UX refinements (CLI output consistency, web UI design
   tokens, accessibility per WCAG 2.1 AA)

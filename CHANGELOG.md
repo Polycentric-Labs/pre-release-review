@@ -3,8 +3,41 @@
 All notable changes to the `/pre-release-review` skill are documented
 in this file.
 
-Versioning is calendar-based (`YYYY.MM.DD-v<major>[.<minor>]`) — the
-date reflects the design lock-in date, not the publish date.
+Versioning is calendar-based (`YYYY.MM.DD-v<major>[.<minor>[.<patch>]]`)
+— the date reflects the design lock-in date, not the publish date.
+
+## [2026.05.27-v5.1.1] — 2026-05-27
+
+**Theme**: LL-V105-1 prevention — new-PyPI-project pending-publisher
+pre-flight check.
+
+### Added
+
+- **Step 5.D.2** — New-PyPI-project pending-publisher check in
+  [references/steps-5-6.md §Step 5 sub-passes](references/steps-5-6.md).
+  For projects with a `pypi-trusted-publisher` target, GETs
+  `https://pypi.org/pypi/<pkg>/json` for every workspace package.
+  HTTP 404 → NEW PyPI project; operator must confirm a pending
+  publisher row exists at https://pypi.org/manage/account/publishing/
+  before Step 6.F surfaces `git tag`. Blocks if any NEW package is
+  un-confirmed at gate close. Skips on rate-limit / network error
+  with a yellow flag. Skips entirely when `publish-targets.yaml`
+  has no `pypi-trusted-publisher` target.
+
+### Originating incident
+
+- **LL-V105-1** (Evidentia v0.10.5 partial-publish, 2026-05-26):
+  `evidentia-eval` was the 8th workspace package, added in v0.10.5
+  Phase 9. No PyPI pending publisher was pre-configured. When
+  `release.yml` fired, the OIDC Trusted Publisher upload step hit
+  HTTP 400 (`Non-user identities cannot create new projects`) at the
+  4th alphabetical package; 5 of 8 packages published, 3 missing,
+  no GHCR container, no GitHub Release until recovery. Recovery
+  required Allen manually configuring the pending publisher on PyPI's
+  UI + `gh run rerun --failed` (~10 min total). PyPI version slots
+  for the 5 already-uploaded packages were burned irreversibly. This
+  v5.1.1 check is designed to surface the same condition at Step 5.D
+  BEFORE the tag is created, when remediation is cheap.
 
 ## [2026.05.24-v5.1] — 2026-05-24
 

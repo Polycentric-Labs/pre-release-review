@@ -9,7 +9,7 @@
 > Practices Silver / OSPS Baseline).
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Skill version](https://img.shields.io/badge/version-2026.05.24--v5.1-green.svg)](SKILL.md)
+[![Skill version](https://img.shields.io/badge/version-2026.05.27--v5.1.1-green.svg)](SKILL.md)
 
 ## What this is
 

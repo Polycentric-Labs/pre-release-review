@@ -1,33 +1,42 @@
 ---
 name: pre-release-review
-version: 2026.05.24-v5.1
+version: 2026.05.27-v5.1.1
 description: |
   Run a comprehensive pre-release review of a project before tagging
-  a high-stakes release. v5.1 adds (on top of v5.0.1): 8 compliance-mapping
-  extensions (SLSA v1.2 + NIST SP 800-218A scope-corrected subset + OSPS
-  Baseline 8-family enumeration + NIST SSDF v1.2 IPD watch + CMMI honest-
-  claim + expanded honest-gap field with AI-as-force-multiplier framing);
-  5 bootstrap-emitted compliance templates (DORA Art. 17 incident matrix
-  + SECURITY.md/security.txt/GHSA + GOVERNANCE.md/EOL.md/risk-appetite +
-  A.6.3 training log + OSPS-DO-03 verification recipe); Row 20 OSPS-QA-05
-  binary-in-VCS check + Row 6 coverage-threshold enforcement; Step 7.4.5
-  reproducible-build verify (when in-scope); 4 skill-prose enhancements
-  (3-question business-case prompt at Step 6.E + Goddard/Parasuraman/
-  Cerbos/CodeRabbit/Apiiro citations in bypass-protocol + FAIR Loss
-  Magnitude column in bug-bucketing); freshness-window parameterization
-  (repo_risk_tier + context-sensitive invalidation triggers); new
-  scripts/control_chart.py (I-MR / u-chart / g-chart / DPMO over per-run
-  JSONs); DMADV 5th variant for major-version bumps. v5 baseline carried
-  forward: project-shape detection (portable across Python/Node/Rust/Go/
-  Java/Ruby/PHP/Elixir/.NET); first-run bootstrap wizard; Guideline #12
-  hard rule; 17→19→20-row pre-push gate; publish-targets.yaml-driven
-  Step 7; /security-review-scoped wrapper; EPSS auto-lookup; G6 Python
-  gates; auto-generate docs/security-review-vX.Y.Z.md; core (2) + optional
-  (3) deliverables. Variants: Pre-tag, Pre-push, Pre-merge-to-main,
-  Quarterly cadence, **DMADV (NEW v5.1)** for major-version bumps.
-  Multi-hour to multi-session investment; NOT appropriate for every PR
-  or patch release. Prototyped on Evidentia v0.7.0 (v3, April 2026) →
-  v0.7.5 (v4) → v0.10.4 (v5 design, May 2026) → v5.1 (May 24 2026).
+  a high-stakes release. v5.1.1 (2026-05-27) adds a Step 5.D.2 new-
+  PyPI-project pending-publisher pre-flight check that catches the
+  Evidentia v0.10.5 partial-publish failure mode (LL-V105-1) BEFORE
+  `release.yml` fires: any workspace package that does NOT yet exist
+  on PyPI (HTTP 404 on `pypi.org/pypi/<pkg>/json`) is flagged and the
+  operator must confirm a pending publisher row is configured in the
+  PyPI dashboard before Step 6.F is allowed to surface `git tag`.
+  v5.1 (2026-05-24) added: 8 compliance-mapping extensions (SLSA v1.2
+  + NIST SP 800-218A scope-corrected subset + OSPS Baseline 8-family
+  enumeration + NIST SSDF v1.2 IPD watch + CMMI honest-claim + expanded
+  honest-gap field with AI-as-force-multiplier framing); 5 bootstrap-
+  emitted compliance templates (DORA Art. 17 incident matrix +
+  SECURITY.md/security.txt/GHSA + GOVERNANCE.md/EOL.md/risk-appetite +
+  A.6.3 training log + OSPS-DO-03 verification recipe); Row 20 OSPS-
+  QA-05 binary-in-VCS check + Row 6 coverage-threshold enforcement;
+  Step 7.4.5 reproducible-build verify (when in-scope); 4 skill-prose
+  enhancements (3-question business-case prompt at Step 6.E + Goddard/
+  Parasuraman/Cerbos/CodeRabbit/Apiiro citations in bypass-protocol +
+  FAIR Loss Magnitude column in bug-bucketing); freshness-window
+  parameterization (repo_risk_tier + context-sensitive invalidation
+  triggers); new scripts/control_chart.py (I-MR / u-chart / g-chart /
+  DPMO over per-run JSONs); DMADV 5th variant for major-version bumps.
+  v5 baseline carried forward: project-shape detection (portable
+  across Python/Node/Rust/Go/Java/Ruby/PHP/Elixir/.NET); first-run
+  bootstrap wizard; Guideline #12 hard rule; 17→19→20-row pre-push
+  gate; publish-targets.yaml-driven Step 7; /security-review-scoped
+  wrapper; EPSS auto-lookup; G6 Python gates; auto-generate
+  docs/security-review-vX.Y.Z.md; core (2) + optional (3) deliverables.
+  Variants: Pre-tag, Pre-push, Pre-merge-to-main, Quarterly cadence,
+  **DMADV** for major-version bumps. Multi-hour to multi-session
+  investment; NOT appropriate for every PR or patch release.
+  Prototyped on Evidentia v0.7.0 (v3, April 2026) → v0.7.5 (v4) →
+  v0.10.4 (v5 design, May 2026) → v5.1 (May 24 2026) → v5.1.1
+  (May 27 2026, LL-V105-1 prevention from Evidentia v0.10.5).
 ---
 
 # Pre-release review (v5)
