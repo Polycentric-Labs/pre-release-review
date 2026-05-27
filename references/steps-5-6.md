@@ -126,6 +126,76 @@ When staging any sub-pass that touches >5 files or >300 LOC:
     particular have a similar "new package on a scoped namespace
     requires `--access public` on first publish" trap that is NOT
     covered here.
+  - **5.D.3 Comprehensive docs-health check** (NEW v5.1.2 per Allen's
+    2026-05-27 directive; Evidentia v0.10.7 docs-cleanup cycle). Run
+    the project's `scripts/check_docs_health.py --strict` from the
+    target project's working directory. The check enforces 5 health
+    invariants across every tracked `.md` file:
+
+    1. **parse_validity** — every `.md` is valid UTF-8 and parses
+       cleanly (no encoding artifacts; no malformed frontmatter).
+    2. **cross_link_resolve** — every relative markdown link resolves
+       to a real path. Code-fence-aware (links inside ``` blocks are
+       skipped); per-file allowlist for known-external references;
+       per-line allowlist for inline-code false positives; wiki-stub
+       references auto-downgrade to WARN rather than FAIL.
+    3. **readme_size_guard** — `README.md` is at or below the byte
+       budget declared in the script (catches README bloat that
+       degrades the first-impression read).
+    4. **tier_vocab_audit** — no Pro / Enterprise / Federal commercial-
+       tier vocabulary appears in public files. Configurable forbidden-
+       pattern set + per-file allowlist for legitimate prose
+       (positioning docs that need to *discuss* the tier model).
+    5. **private_path_leak** — no public `.md` file links to
+       `private/` paths (the gitignored commercial-strategy directory
+       per `~/.claude/CLAUDE.md`).
+
+    **Detection algorithm**:
+    1. From the target project's working directory, run
+       `uv run python scripts/check_docs_health.py --strict`. Exit code
+       0 → PASS; exit code 2 → FAIL (one or more invariants violated).
+    2. The script also supports `--advisory` mode (exits 0 even with
+       FAILs; useful for dev preview / WIP branches) and `--json` mode
+       (machine-readable output for the per-run JSON `docs_health` field).
+    3. Capture the stdout summary to the per-run JSON
+       `docs_health: {status, findings: [...]}` field for audit trail.
+
+    **Decision gate**:
+    - `--strict` exit 0 → 5.D.3 PASS; advance to 5.E.
+    - `--strict` exit 2 → 5.D.3 BLOCK; refuse to advance to 5.E (and
+      therefore refuse to surface `git tag` at Step 6.F). Operator must
+      fix the surfaced findings + re-run.
+    - Bypass via `STALE REVIEW ACCEPTED — <reason>` per
+      [bypass-protocol.md §B2](bypass-protocol.md#b2--stale-review-accepted--reason).
+      Rationale logs to the per-run JSON.
+
+    **If the script doesn't exist in the project**: Evidentia v0.10.7+
+    ships it at `scripts/check_docs_health.py` (see Evidentia commit
+    `32df7fa`) as a project-side artifact. Other projects need to
+    author their own equivalent — the skill does NOT ship the script
+    itself because the byte budget, allowlists, and forbidden-pattern
+    sets are project-specific. If missing, advise the operator to copy
+    the Evidentia reference implementation as a starting point and
+    tune the allowlists. SKIP the gate with a yellow flag when the
+    script is absent rather than blocking; surface "5.D.3 SKIPPED —
+    `scripts/check_docs_health.py` not found; recommended to author one".
+
+    **Rationale**: prevents docs-only regressions (broken cross-links,
+    tier-vocab leaks, README bloat, private-path leaks) from shipping
+    silently in a tag. Allen's 2026-05-27 directive added this after
+    the v0.10.7 docs-cleanup cycle surfaced ~50 broken cross-links +
+    35 tier-vocab leaks that would have shipped without the gate.
+    Docs-only regressions are particularly insidious because the test
+    gate (Row 6) and the security review (Steps 3 / 4 / 6.C) do not
+    catch them — the prose compiles fine and runs no code. Without a
+    dedicated docs invariant gate, the failure mode is silent decay
+    over many releases.
+
+    **Skill-resolution-status**: Resolved at skill v5.1.2 (2026-05-27).
+    Companion lessons-learned entry would normally land at
+    `.local/pre-release-review/lessons-learned.yaml` as LL-V107-1 but
+    v0.10.7 hasn't shipped yet — flag for the v0.10.7 cycle's Step 7.G
+    to add the entry.
 - **5.E** — Doc merging review (consolidate identical-purpose docs)
 - **5.F** — UI/UX refinements (CLI output consistency, web UI design
   tokens, accessibility per WCAG 2.1 AA)

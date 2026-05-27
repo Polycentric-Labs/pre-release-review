@@ -6,6 +6,55 @@ in this file.
 Versioning is calendar-based (`YYYY.MM.DD-v<major>[.<minor>[.<patch>]]`)
 — the date reflects the design lock-in date, not the publish date.
 
+## [2026.05.27-v5.1.2] — 2026-05-27
+
+**Theme**: Comprehensive docs-health gate — prevent docs-only regressions
+from shipping silently in a tag.
+
+### Added
+
+- **Step 5.D.3** — Comprehensive docs-health check in
+  [references/steps-5-6.md §Step 5 sub-passes](references/steps-5-6.md).
+  Runs the target project's `scripts/check_docs_health.py --strict`
+  from the project's working directory. The check enforces 5 health
+  invariants across every tracked `.md` file:
+  1. **parse_validity** — every `.md` is valid UTF-8
+  2. **cross_link_resolve** — every relative markdown link resolves
+     (code-fence-aware + per-file allowlist + per-line allowlist +
+     wiki-stub auto-downgrade to WARN)
+  3. **readme_size_guard** — `README.md` at or below byte budget
+  4. **tier_vocab_audit** — no Pro / Enterprise / Federal commercial-
+     tier vocabulary in public files (with per-file allowlist)
+  5. **private_path_leak** — no public `.md` file links to `private/`
+     paths
+  Exits 0 on PASS / 2 on FAIL under `--strict`. Also supports
+  `--advisory` (exits 0 even with FAILs; dev preview) and `--json`
+  (machine-readable for per-run JSON `docs_health` field). Blocks
+  Step 5.D on FAIL; bypass via `STALE REVIEW ACCEPTED — <reason>`
+  per [bypass-protocol.md §B2](references/bypass-protocol.md). SKIP
+  with yellow flag when the script is absent rather than blocking;
+  surface a recommendation to author one.
+
+### Originating directive
+
+- **Allen's 2026-05-27 directive** (Evidentia v0.10.7 docs-cleanup
+  cycle): the cycle surfaced ~50 broken cross-links + 35 tier-vocab
+  leaks that would have shipped silently in the next tag without a
+  dedicated docs invariant gate. The existing pre-push gate rows
+  (test gate, security review, etc.) do not catch docs-only
+  regressions because the prose compiles fine and runs no code. The
+  v5.1.2 Step 5.D.3 gate plugs that hole. Project-side script ships
+  in Evidentia at commit `32df7fa` as the reference implementation;
+  other projects need to author their own (byte budgets and
+  allowlists are project-specific).
+
+### Companion lessons-learned entry
+
+- A companion lessons-learned entry would normally land at the
+  project's `.local/pre-release-review/lessons-learned.yaml` as
+  LL-V107-1 but Evidentia v0.10.7 hasn't shipped yet — flag for the
+  v0.10.7 cycle's Step 7.G to add the entry.
+
 ## [2026.05.27-v5.1.1] — 2026-05-27
 
 **Theme**: LL-V105-1 prevention — new-PyPI-project pending-publisher

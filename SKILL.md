@@ -1,9 +1,19 @@
 ---
 name: pre-release-review
-version: 2026.05.27-v5.1.1
+version: 2026.05.27-v5.1.2
 description: |
   Run a comprehensive pre-release review of a project before tagging
-  a high-stakes release. v5.1.1 (2026-05-27) adds a Step 5.D.2 new-
+  a high-stakes release. v5.1.2 (2026-05-27) adds a Step 5.D.3
+  comprehensive docs-health check that runs the target project's
+  `scripts/check_docs_health.py --strict` and blocks the tag at 5.D
+  on any FAIL across 5 invariants (parse_validity, cross_link_resolve,
+  readme_size_guard, tier_vocab_audit, private_path_leak). Prevents
+  docs-only regressions (broken cross-links, tier-vocab leaks, README
+  bloat, private-path leaks) from shipping silently in a tag. Added
+  per Allen's 2026-05-27 directive after the Evidentia v0.10.7 docs-
+  cleanup cycle surfaced ~50 broken cross-links + 35 tier-vocab leaks
+  that would have shipped without the gate.
+  v5.1.1 (2026-05-27) added a Step 5.D.2 new-
   PyPI-project pending-publisher pre-flight check that catches the
   Evidentia v0.10.5 partial-publish failure mode (LL-V105-1) BEFORE
   `release.yml` fires: any workspace package that does NOT yet exist
@@ -36,7 +46,9 @@ description: |
   investment; NOT appropriate for every PR or patch release.
   Prototyped on Evidentia v0.7.0 (v3, April 2026) → v0.7.5 (v4) →
   v0.10.4 (v5 design, May 2026) → v5.1 (May 24 2026) → v5.1.1
-  (May 27 2026, LL-V105-1 prevention from Evidentia v0.10.5).
+  (May 27 2026, LL-V105-1 prevention from Evidentia v0.10.5) →
+  v5.1.2 (May 27 2026, docs-health gate from Evidentia v0.10.7
+  docs-cleanup cycle).
 ---
 
 # Pre-release review (v5)
