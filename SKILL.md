@@ -1,9 +1,26 @@
 ---
 name: pre-release-review
-version: 2026.05.27-v5.1.2
+version: 2026.05.27-v5.1.3
 description: |
   Run a comprehensive pre-release review of a project before tagging
-  a high-stakes release. v5.1.2 (2026-05-27) adds a Step 5.D.3
+  a high-stakes release. v5.1.3 (2026-05-27) extends Step 5.D.3's
+  comprehensive docs-health check from 5 invariants to 8 by adding 3
+  publicly-facing-surface checks (commit_msg_audit, tag_msg_audit,
+  release_body_audit) that scan `git log <cutoff>..HEAD` bodies +
+  annotated tag bodies + the latest GitHub Release body against the
+  same forbidden-phrase regex set as the tier_vocab_audit. Cutoff SHA
+  `32df7fa` per Allen 2026-05-27 treats earlier commit / tag history as
+  immutable (force-update would break cosign signatures bound to those
+  SHAs); v0.10.5 tag + earlier are allowlisted. `release_body_audit`
+  uses `gh api` and runs in advisory mode (gracefully WARNs if gh is
+  unauthenticated). Companion `.githooks/commit-msg` (activated via
+  `bash scripts/setup-githooks.sh`) catches forbidden phrasing at
+  `git commit` time as defense-in-depth before the skill's pre-tag
+  gate fires. Same script invocation as v5.1.2 (`scripts/check_docs_health.py
+  --strict`) — the 3 new checks are auto-included via the script's
+  extended scope; Evidentia commit `f1dac4e` is the project-side
+  reference implementation.
+  v5.1.2 (2026-05-27) added a Step 5.D.3
   comprehensive docs-health check that runs the target project's
   `scripts/check_docs_health.py --strict` and blocks the tag at 5.D
   on any FAIL across 5 invariants (parse_validity, cross_link_resolve,
@@ -48,7 +65,8 @@ description: |
   v0.10.4 (v5 design, May 2026) → v5.1 (May 24 2026) → v5.1.1
   (May 27 2026, LL-V105-1 prevention from Evidentia v0.10.5) →
   v5.1.2 (May 27 2026, docs-health gate from Evidentia v0.10.7
-  docs-cleanup cycle).
+  docs-cleanup cycle) → v5.1.3 (May 27 2026, publicly-facing-surface
+  extension from Evidentia commit `f1dac4e`).
 ---
 
 # Pre-release review (v5)

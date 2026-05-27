@@ -6,6 +6,62 @@ in this file.
 Versioning is calendar-based (`YYYY.MM.DD-v<major>[.<minor>[.<patch>]]`)
 — the date reflects the design lock-in date, not the publish date.
 
+## [2026.05.27-v5.1.3] — 2026-05-27
+
+**Theme**: Publicly-facing-surface extension of the v5.1.2 docs-health
+gate — prevent forbidden phrasing from leaking into commit messages,
+annotated tag bodies, or GitHub Release bodies.
+
+### Changed
+
+- **Step 5.D.3** — Extended the comprehensive docs-health check in
+  [references/steps-5-6.md §Step 5 sub-passes](references/steps-5-6.md)
+  from 5 invariants to 8 by adding 3 publicly-facing-surface checks.
+  Same script invocation as v5.1.2 (`scripts/check_docs_health.py
+  --strict`); the 3 new checks are auto-included via the script's
+  extended scope. No new Step 5.D.4 is added — a separate step would
+  be confusing duplication.
+
+### Added (the 3 new publicly-facing-surface checks)
+
+- **commit_msg_audit** — scans `git log <cutoff>..HEAD` bodies for
+  the same forbidden-phrase regex set as `tier_vocab_audit`. Cutoff
+  SHA `32df7fa` (Allen 2026-05-27 decision) treats earlier history
+  as immutable; v0.10.5 tag + earlier are allowlisted.
+- **tag_msg_audit** — scans annotated tag bodies for the same regex
+  set. Older tags are allowlisted as immutable because a force-update
+  would break cosign signatures bound to those SHAs.
+- **release_body_audit** — uses `gh api` to inspect the latest
+  GitHub Release body. Advisory mode (gracefully WARNs if `gh` is
+  unauthenticated or rate-limited rather than blocking).
+- **Companion local commit-msg hook** — defense-in-depth pattern:
+  Evidentia's `.githooks/commit-msg` (activated via `bash
+  scripts/setup-githooks.sh`) catches forbidden phrasing at `git
+  commit` time BEFORE the skill's pre-tag gate fires. The Step 5.D.3
+  `commit_msg_audit` is the belt-and-suspenders catch for the 1% case
+  where the hook was bypassed (`git commit --no-verify`) or where a
+  commit arrived via a different path (rebase / squash / merge
+  commit / cherry-pick).
+
+### Originating directive
+
+- **Allen's 2026-05-27 follow-on directive** (same-day extension of
+  the v5.1.2 docs-health gate). The v5.1.2 baseline covered the
+  tracked `.md` files; commit messages, annotated tag bodies, and
+  GitHub Release bodies are *also* publicly visible prose written
+  under the same prose-discipline rules but were not previously
+  covered by any automated check. The 3 new checks close that gap.
+  Project-side reference implementation ships in Evidentia at commit
+  `f1dac4e` (extends commit `32df7fa`'s v5.1.2 baseline).
+
+### Companion lessons-learned entry
+
+- A companion lessons-learned entry would normally land at the
+  project's `.local/pre-release-review/lessons-learned.yaml` as
+  LL-V107-2 but Evidentia v0.10.7 hasn't shipped yet — flag for the
+  v0.10.7 cycle's Step 7.G to add the entry alongside the v5.1.2
+  LL-V107-1 entry.
+
 ## [2026.05.27-v5.1.2] — 2026-05-27
 
 **Theme**: Comprehensive docs-health gate — prevent docs-only regressions

@@ -127,10 +127,16 @@ When staging any sub-pass that touches >5 files or >300 LOC:
     requires `--access public` on first publish" trap that is NOT
     covered here.
   - **5.D.3 Comprehensive docs-health check** (NEW v5.1.2 per Allen's
-    2026-05-27 directive; Evidentia v0.10.7 docs-cleanup cycle). Run
-    the project's `scripts/check_docs_health.py --strict` from the
-    target project's working directory. The check enforces 5 health
-    invariants across every tracked `.md` file:
+    2026-05-27 directive; Evidentia v0.10.7 docs-cleanup cycle; EXTENDED
+    v5.1.3 per Allen's 2026-05-27 follow-on directive; Evidentia commit
+    `f1dac4e` is the project-side reference implementation). Run the
+    project's `scripts/check_docs_health.py --strict` from the target
+    project's working directory. The check enforces 8 health invariants
+    — 5 doc-health invariants across every tracked `.md` file PLUS 3
+    publicly-facing-surface checks against commit messages, annotated
+    tag bodies, and the latest GitHub Release body:
+
+    **Doc-health invariants (5; v5.1.2 baseline)**:
 
     1. **parse_validity** — every `.md` is valid UTF-8 and parses
        cleanly (no encoding artifacts; no malformed frontmatter).
@@ -150,10 +156,45 @@ When staging any sub-pass that touches >5 files or >300 LOC:
        `private/` paths (the gitignored commercial-strategy directory
        per `~/.claude/CLAUDE.md`).
 
+    **Publicly-facing-surface checks (3; NEW v5.1.3)**:
+
+    6. **commit_msg_audit** — scans `git log <cutoff>..HEAD` bodies
+       for the same forbidden-phrase regex set as `tier_vocab_audit`.
+       Cutoff SHA `32df7fa` (Allen 2026-05-27 decision) treats earlier
+       history as immutable; v0.10.5 tag + earlier are allowlisted.
+       Commit messages are publicly visible on the GitHub repo page +
+       `git log` clones + release-note auto-generators — they need the
+       same tier-vocab discipline as the tracked `.md` files.
+    7. **tag_msg_audit** — scans annotated tag bodies for the same
+       regex set. Older tags are allowlisted as immutable because a
+       force-update would break cosign signatures bound to those SHAs
+       (the cryptographic provenance chain is downstream of the tag
+       object hash). Catches forbidden phrasing in any *new* annotated
+       tag body BEFORE it is signed + pushed.
+    8. **release_body_audit** — uses `gh api` to inspect the latest
+       GitHub Release body. Advisory mode (gracefully WARNs if `gh` is
+       unauthenticated or rate-limited rather than blocking). GitHub
+       Releases are the most prominently surfaced release artifact —
+       Discord / Slack / email notifications all pull the body — so
+       forbidden phrasing there has the largest blast radius of the
+       three publicly-facing surfaces.
+
+    **Defense-in-depth companion**: a local `.githooks/commit-msg` hook
+    (activated via `bash scripts/setup-githooks.sh` on first project
+    setup) catches forbidden phrasing at `git commit` time — BEFORE
+    the skill's pre-tag gate fires. The commit-msg hook covers the
+    99% case where forbidden phrasing would have been introduced in a
+    fresh commit; the Step 5.D.3 `commit_msg_audit` is the
+    belt-and-suspenders catch for the 1% case where the hook was
+    bypassed (`git commit --no-verify`) or where a commit arrived via
+    a different path (rebase / squash / `git pull` merge commit /
+    cherry-pick from a branch without the hook activated).
+
     **Detection algorithm**:
     1. From the target project's working directory, run
        `uv run python scripts/check_docs_health.py --strict`. Exit code
-       0 → PASS; exit code 2 → FAIL (one or more invariants violated).
+       0 → PASS; exit code 2 → FAIL (one or more of the 8 invariants
+       violated).
     2. The script also supports `--advisory` mode (exits 0 even with
        FAILs; useful for dev preview / WIP branches) and `--json` mode
        (machine-readable output for the per-run JSON `docs_health` field).
@@ -170,28 +211,39 @@ When staging any sub-pass that touches >5 files or >300 LOC:
       Rationale logs to the per-run JSON.
 
     **If the script doesn't exist in the project**: Evidentia v0.10.7+
-    ships it at `scripts/check_docs_health.py` (see Evidentia commit
-    `32df7fa`) as a project-side artifact. Other projects need to
-    author their own equivalent — the skill does NOT ship the script
-    itself because the byte budget, allowlists, and forbidden-pattern
-    sets are project-specific. If missing, advise the operator to copy
-    the Evidentia reference implementation as a starting point and
-    tune the allowlists. SKIP the gate with a yellow flag when the
-    script is absent rather than blocking; surface "5.D.3 SKIPPED —
-    `scripts/check_docs_health.py` not found; recommended to author one".
+    ships it at `scripts/check_docs_health.py` — the v5.1.2 baseline
+    (5 doc-health invariants) lands at Evidentia commit `32df7fa` and
+    the v5.1.3 extension (3 publicly-facing-surface checks + the
+    companion commit-msg hook) lands at Evidentia commit `f1dac4e`.
+    Other projects need to author their own equivalent — the skill
+    does NOT ship the script itself because the byte budget,
+    allowlists, forbidden-pattern sets, and cutoff SHA are
+    project-specific. If missing, advise the operator to copy the
+    Evidentia reference implementation as a starting point and tune
+    the allowlists + cutoff SHA. SKIP the gate with a yellow flag
+    when the script is absent rather than blocking; surface "5.D.3
+    SKIPPED — `scripts/check_docs_health.py` not found; recommended
+    to author one".
 
     **Rationale**: prevents docs-only regressions (broken cross-links,
-    tier-vocab leaks, README bloat, private-path leaks) from shipping
-    silently in a tag. Allen's 2026-05-27 directive added this after
-    the v0.10.7 docs-cleanup cycle surfaced ~50 broken cross-links +
-    35 tier-vocab leaks that would have shipped without the gate.
-    Docs-only regressions are particularly insidious because the test
-    gate (Row 6) and the security review (Steps 3 / 4 / 6.C) do not
-    catch them — the prose compiles fine and runs no code. Without a
-    dedicated docs invariant gate, the failure mode is silent decay
-    over many releases.
+    tier-vocab leaks, README bloat, private-path leaks) AND
+    publicly-facing-surface regressions (forbidden phrasing in
+    commit / tag / release-body text) from shipping silently in a
+    tag. Allen's 2026-05-27 directive added the doc-health baseline
+    after the v0.10.7 docs-cleanup cycle surfaced ~50 broken
+    cross-links + 35 tier-vocab leaks; the same-day v5.1.3 follow-on
+    directive extended the gate to cover the publicly-facing surfaces
+    because commit / tag / release-body text are written under the
+    same prose-discipline rules as the tracked `.md` files but were
+    not previously covered by any automated check. Docs-only +
+    surface-text regressions are particularly insidious because the
+    test gate (Row 6) and the security review (Steps 3 / 4 / 6.C) do
+    not catch them — the prose compiles fine and runs no code.
+    Without a dedicated invariant gate covering both surfaces, the
+    failure mode is silent decay over many releases.
 
-    **Skill-resolution-status**: Resolved at skill v5.1.2 (2026-05-27).
+    **Skill-resolution-status**: Resolved at skill v5.1.3 (2026-05-27;
+    v5.1.2 baseline + v5.1.3 publicly-facing-surface extension).
     Companion lessons-learned entry would normally land at
     `.local/pre-release-review/lessons-learned.yaml` as LL-V107-1 but
     v0.10.7 hasn't shipped yet — flag for the v0.10.7 cycle's Step 7.G
