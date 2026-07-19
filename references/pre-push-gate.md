@@ -1,4 +1,4 @@
-# Pre-push gate (20 rows in v5.1)
+# Pre-push gate (21 rows in v5.2.1)
 
 Checks that MUST run before any `git push` (in-flight branch push,
 PR merge, or tag push). The full pre-tag flow rolls these into
@@ -9,7 +9,12 @@ v5 adds **Row 18** (branch-protection-bypass audit per Q5) and
 baseline (which included the post-Evidentia-v0.10.3 Row 17 CHANGELOG-
 presence gate). **v5.1 adds Row 20** (OSPS-QA-05 binary-in-VCS check)
 and amends **Row 6** (test gate now enforces coverage threshold per
-OpenSSF Gold/Silver tier).
+OpenSSF Gold/Silver tier). **v5.2.1 (2026-07-02) adds Row 21**
+(release-workflow first-live-run audit) after the Evidentia
+v0.10.14/v0.10.15 double ghost-tag incident: a PROCEED-CLEAN review
+preceded two tag-time failures inside publish jobs that are
+structurally unreachable in PR CI (see Evidentia
+`.local/pre-release-review/lessons-learned.yaml` LL-V1016-1).
 
 ## The 20-row table
 
@@ -35,6 +40,7 @@ OpenSSF Gold/Silver tier).
 | 18 | **(NEW v5 per Q5) Branch-protection bypass audit** | Push remote-output parsed for "Bypassed rule violations" string; any hit is logged to per-run JSON `bypass_events[]` + yellow-flagged at Step 6.D. Audit event, NOT a hard-fail — bypass is sometimes legit (admin acks for hot-fixes). Surfaces in Step 7.10 MEMORY.md SHIPPED entry. See [bypass-protocol.md §Q5](bypass-protocol.md). |
 | 19 | **(NEW v5 per Q11) Documentation freshness gate** | All in-scope docs per `.local/pre-release-review/doc-inventory.yaml` are fresh enough: `staleness_policy: every-release` docs were touched this release; `N-releases` policies satisfied; `must_match_version: true` docs reference the current version; `refresh_required_on: [bump-shape]` honored. Hard-fail unless bypassed via `DOC FRESHNESS BYPASS — <reason>`. See [documentation-freshness.md](documentation-freshness.md). |
 | 20 | **(NEW v5.1; 1O) OSPS-QA-05 binary-in-VCS check** | 0 hits: `git ls-files \| xargs file \| grep -E 'ELF\|Mach-O\|PE32'` returns empty. Closes OpenSSF OSPS-QA-05 at all maturity levels. Allowlist via `config.yaml binary_in_vcs_allowlist: [path, ...]` for legitimate cases (e.g., test fixtures, icons). |
+| 21 | **(NEW v5.2.1; LL-V1016-1) Release-workflow first-live-run audit** | Fires ONLY when the release/publish workflow file(s) changed since the last **successfully published** tag (`git diff <last-good-tag>..HEAD -- .github/workflows/<release>.yml` non-empty). Publish jobs are structurally unreachable in PR CI — a tag is their first execution, on an irreversible trigger. Before tagging, simulate every post-build job step in execution order and verify: (a) every shell command's tool is installed **in that job** (or runner-preinstalled — `gh`/`jq`/`python`/`docker` yes; `uv`/`uvx`/`cosign`/`syft`/`grype` NO); (b) every pinned action's inputs/outputs exist in its `action.yml` **at the pinned SHA** (fetch it — do not trust comments); (c) artifact upload/download names + paths match across jobs; (d) any `environment:` deployment policy allows **tag refs** (a main-only policy reds every tag run); (e) every event trigger is reachable — a Release created with `GITHUB_TOKEN` NEVER fires `release:` workflows (dead gate); (f) no cache-enabled action in the publish path (cache-poisoning; zizmor). Findings block the tag. Origin: Evidentia v0.10.14 (HashMismatch — pip-compile reuses an existing output-file's hashes) + v0.10.15 (exit 127 — `uvx` never installed in publish-pypi), both caught by the atomic gate with nothing published. |
 
 ## Runbook
 

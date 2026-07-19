@@ -9,7 +9,7 @@
 > Practices Silver / OSPS Baseline).
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Skill version](https://img.shields.io/badge/version-2026.05.27--v5.1.4-green.svg)](SKILL.md)
+[![Skill version](https://img.shields.io/badge/version-2026.05.27--v5.1.3-green.svg)](SKILL.md)
 
 ## What this is
 
@@ -110,7 +110,7 @@ substantive changes vs v5.0.1:
   OpenSSF OSPS Baseline 8-family enumeration + CISA SbD Pledge +
   NIST SP 800-218A scope-corrected AI subset. See
   [compliance-mapping.md](references/compliance-mapping.md).
-- **5 compliance-closure template groups added in v5.1** in [references/templates/](references/templates/):
+- **5 compliance-closure templates** in [references/templates/](references/templates/):
   SECURITY.md + security.txt, EOL.md, GOVERNANCE.md + risk-appetite.md,
   DORA Art. 17 incident-severity matrix, A.6.3 training log,
   OSPS-DO-03 verification-recipe.
@@ -124,7 +124,7 @@ For the full evolution narrative (v3 → v4 → v5 → v5.1), see [CHANGELOG.md]
 ```
 .
 ├── SKILL.md                          # entry-point manifest
-├── references/                       # 20 reference docs
+├── references/                       # 16 reference files
 │   ├── variants.md                   # 5 variant flows + skip-by-reuse
 │   ├── steps-1-2.md                  # Step 1 (process) + Step 2 (positioning)
 │   ├── steps-3-4.md                  # Step 3 (re-test) + Step 4 (capability)
@@ -145,7 +145,7 @@ For the full evolution narrative (v3 → v4 → v5 → v5.1), see [CHANGELOG.md]
 │   ├── verification-gates.md         # programmatic step-output checks (Python)
 │   ├── tools-prerequisites.md        # tool install guide + Python 3.11+ prereq
 │   ├── maintenance.md                # meta-rubric for skill changes
-│   └── templates/                    # 10 docs + 4 helpers
+│   └── templates/                    # 11 compliance-closure templates
 ├── scripts/
 │   └── control_chart.py              # I-MR / u-chart / g-chart / DPMO
 ├── examples/                         # worked examples

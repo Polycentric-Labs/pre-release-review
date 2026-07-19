@@ -1,9 +1,23 @@
 ---
 name: pre-release-review
-version: 2026.05.27-v5.1.4
+version: 2026.06.04-v5.2
 description: |
   Run a comprehensive pre-release review of a project before tagging
-  a high-stakes release. v5.1.4 (2026-05-27) reflects the Evidentia-
+  a high-stakes release. v5.2 (2026-06-04) folds in 4 refinements
+  surfaced by the RegRails v0.4.0 + Evidentia v0.10.7/v0.10.8 sweeps
+  (additive; no existing behavior changed): G27 unified capability
+  inventory (Step 2.2 / Step 4 walk the CLI `--help` tree + API/OpenAPI
+  surface + UI routes TOGETHER, flagging any CLI leaf with no API/UI
+  surface — the gap a passing type-drift gate would mask); G28 docs-
+  from-verified-facts publish gate (every shipped doc/wiki claim must
+  trace to a `doc-runtime-verifier` PASS, proactive — not a post-hoc
+  accuracy sweep); G29 right-sizing rubric (an explicit read-the-change
+  → judge-attack-surface → dial-the-ceremony call: full vs right-sized,
+  with criteria); G30 gates-exist seam (Step 1.0 checks the project's
+  automatic gates — version-consistency / tag-time gate / CLI↔UI parity
+  / secret-scan / commit-msg hook — exist, and points at the setup-time
+  companion skill `release-safeguards-scaffolder` if any are missing).
+  v5.1.4 (2026-05-27) reflects the Evidentia-
   side refactor that moves Step 5.D.3's phrase-audit regex set out of
   the public-tracked script source and into a gitignored config file
   (`private/check-docs-health-patterns.yaml`). The skill's invocation
@@ -72,7 +86,10 @@ description: |
   (May 27 2026, LL-V105-1 prevention from Evidentia v0.10.5) →
   v5.1.2 (May 27 2026, docs-health gate from Evidentia v0.10.7
   docs-cleanup cycle) → v5.1.3 (May 27 2026, publicly-facing-surface
-  extension from Evidentia commit `f1dac4e`).
+  extension from Evidentia commit `f1dac4e`) → v5.2 (Jun 4 2026, the
+  4-refinement fold from the RegRails v0.4.0 + Evidentia v0.10.7/
+  v0.10.8 sweeps; companion to the setup-time
+  `release-safeguards-scaffolder` skill).
 ---
 
 # Pre-release review (v5)
@@ -170,12 +187,12 @@ For variants and time estimates, see [references/variants.md](references/variant
 
 | Step | Goal | Reference |
 |---|---|---|
-| 1 | Process review (incl. 1.0 shape-detect + bootstrap + 1.4 scope + 1.5 threat-model + 1.5.1 protected-branch + 1.5.2 review-freshness) | [steps-1-2.md](references/steps-1-2.md) §1 |
-| 2 | Project review (positioning, value, world-class direction) — skip-by-reuse if criteria hold; SKIP entirely when optional deliverable not in `config.yaml` | [steps-1-2.md](references/steps-1-2.md) §2 |
+| 1 | Process review (incl. 1.0 shape-detect + bootstrap + **1.0 gates-exist seam [G30]** + 1.4 scope + **right-sizing rubric [G29]** + 1.5 threat-model + 1.5.1 protected-branch + 1.5.2 review-freshness) | [steps-1-2.md](references/steps-1-2.md) §1 |
+| 2 | Project review (positioning, value, world-class direction; **2.2 unified CLI+API+UI capability inventory [G27]**) — skip-by-reuse if criteria hold; SKIP entirely when optional deliverable not in `config.yaml` | [steps-1-2.md](references/steps-1-2.md) §2 |
 | 3 | Re-test commits (mandatory `/security-review` + auto-fire `/code-review`) | [steps-3-4.md](references/steps-3-4.md) §3 |
-| 4 | Full capability test (mandatory `/security-review-scoped` + DAST per [G11]) | [steps-3-4.md](references/steps-3-4.md) §4 |
-| 5 | Project-wide refinements + doc-inventory iteration | [steps-5-6.md](references/steps-5-6.md) §5 |
-| 6 | Release-checklist + final review + tag + push (final `/security-review` + 19-row pre-push gate) | [steps-5-6.md](references/steps-5-6.md) §6 |
+| 4 | Full capability test (mandatory `/security-review-scoped` + DAST per [G11]; **cross-surface capability walk [G27]**) | [steps-3-4.md](references/steps-3-4.md) §4 |
+| 5 | Project-wide refinements + doc-inventory iteration (**5.C docs-from-verified-facts provenance [G28]**) | [steps-5-6.md](references/steps-5-6.md) §5 |
+| 6 | Release-checklist + final review + tag + push (final `/security-review` + 19-row pre-push gate; **Row 19 trace-to-verifier [G28]**) | [steps-5-6.md](references/steps-5-6.md) §6 |
 | 7 | Post-tag verification (publish-targets-driven; SLSA / NIST SSDF PS.3.1; auto-gen security-review doc) | [step-7-post-tag.md](references/step-7-post-tag.md) |
 
 Each step boundary STOPs for explicit user approval. Step output is
@@ -205,6 +222,57 @@ Plus 2 sub-changes:
 - **Core (2) + optional (3) deliverables split** — replaces v4's 5-mandatory shape
 - **17→19 row pre-push gate** — Row 17 (CHANGELOG-presence, post-v0.10.3) + Row 18 (bypass-audit, v5) + Row 19 (doc-freshness, v5)
 
+## What's new in v5.2 (vs v5.1.4)
+
+4 additive refinements surfaced by the RegRails v0.4.0 +
+Evidentia v0.10.7/v0.10.8 sweeps. Each is a refinement to an
+existing step — no step renumbered, no existing behavior changed.
+
+- **G27 — Unified capability inventory.** Step 2.2's internal
+  capability inventory (and the Step 4 surface walk) now enumerates
+  the CLI `--help` tree **+** the API/OpenAPI surface **+** the UI
+  routes **together**, not docs-only. The cross-surface diff flags any
+  CLI leaf with **no** corresponding API or UI surface — the
+  coverage gap a passing type-drift gate masks (a typed frontend can
+  stay green against the schema while large parts of the CLI never
+  reached the GUI). The inventory is one matrix keyed by capability,
+  with a column per surface (CLI / API / UI) and a verdict per cell;
+  a CLI-only row is a finding to surface, not a silent omission.
+- **G28 — Docs-from-verified-facts publish gate.** Every shipped
+  doc/wiki claim must trace to a `doc-runtime-verifier` PASS
+  **before** it ships — a proactive publish gate, not a post-hoc
+  accuracy sweep. The Step 5.C doc-inventory iteration + the Row 19
+  freshness gate gain a provenance requirement: an in-scope doc whose
+  factual/command claims have not been run through `doc-runtime-verifier`
+  (PASS recorded) is treated as unverified and surfaced for
+  verification before tag, rather than trusted because it "looks
+  right." Stops a confidently-wrong command or stat from shipping in
+  the docs or wiki.
+- **G29 — Right-sizing rubric.** An explicit
+  **read-the-change → judge-attack-surface → dial-the-ceremony**
+  call at Step 1, replacing instinct with criteria. Read the actual
+  diff; classify the change's attack/blast surface; then choose
+  **full** ceremony vs a **right-sized** variant. A
+  presentation-only / docs-only / internal-refactor change with no
+  new externally-reachable surface right-sizes down (often the
+  pre-push gate alone). A change that adds a **new endpoint, a new
+  secret/credential path, or any irreversible surface** (a publish
+  target, a destructive operation, a new network egress) takes the
+  full flow regardless of line count. The rubric is advisory input to
+  the Step 1 variant choice (see
+  [variants.md](references/variants.md)) — it never lowers a gate, it
+  sizes the *review*.
+- **G30 — Gates-exist seam.** Step 1.0 adds a check that the
+  project's **automatic** gates exist — version-consistency,
+  tag-time release gate, CLI↔UI parity, secret-scan, commit-msg
+  hook. These are *setup-time* machinery, not something this
+  release-time skill installs. If any are missing, point the operator
+  at the **`release-safeguards-scaffolder`** skill (the setup-time
+  companion that wires them once per project) rather than hand-rolling
+  them mid-review. This skill *checks the gates exist and runs the
+  review*; the scaffolder *creates the gates*. The seam keeps the two
+  responsibilities distinct (see "Companion skills" below).
+
 ## Commit-attribution discipline (unchanged from v3)
 
 Every commit during this review uses the user's canonical git
@@ -226,6 +294,10 @@ prefixes (`feat(<scope>):` / `fix(<scope>):` / `chore(release|lint|refinements):
 - **(NEW v5) Surfacing `git push` without a fresh per-run JSON** — Guideline #12 makes this a hard rule. Use the bypass phrase or run the review.
 - **(NEW v5) Editing a doc that's not in `doc-inventory.yaml`** — surface "add to inventory?" before commit. Untracked docs decay silently.
 - **(NEW v5) Skipping `/security-review-scoped` Step 4 invocation** — v4 let this slide 4 cycles running. v5 makes it mandatory with the wrapper.
+- **(NEW v5.2) Inventorying capabilities from one surface only [G27]** — a docs-only or CLI-only inventory hides a CLI leaf that never reached the API/UI. Walk all surfaces together; a CLI-only row is a finding, and a passing type-drift gate does NOT mean GUI coverage is complete.
+- **(NEW v5.2) Shipping a doc/wiki claim that never ran [G28]** — "it looks right" is not verification. Every shipped doc/wiki command + factual claim must trace to a `doc-runtime-verifier` PASS before tag, not a post-hoc sweep after a reader notices it's wrong.
+- **(NEW v5.2) Running full ceremony (or skipping it) on instinct [G29]** — read the change, judge the attack surface, then dial: presentation-only right-sizes down; a new endpoint / secret / irreversible surface takes the full flow regardless of line count. The rubric sizes the *review*, never the *gates*.
+- **(NEW v5.2) Hand-rolling automatic gates mid-review [G30]** — version-consistency / tag-time / parity / secret-scan / commit-msg gates are setup-time machinery. If they're missing, point at `release-safeguards-scaffolder`; don't improvise them during a release-time review.
 
 ## "in-repo doc + MEMORY.md pointer" pattern
 
@@ -233,6 +305,32 @@ Per `~/.claude/CLAUDE.md`: each in-repo doc gets a single-line
 MEMORY.md entry + a sibling `pointer_<doc>.md` file. Future Claude
 sessions auto-load pointers + know where canonical content lives.
 Applies to all deliverables — see [references/deliverables.md](references/deliverables.md).
+
+## Companion skills
+
+This skill is **release-time**: it runs the comprehensive review
+before a tag. Two skills compose with it; neither duplicates it.
+
+- **`release-safeguards-scaffolder` — the setup-time counterpart.**
+  It *installs* a project's automatic gates **once** — version-
+  consistency, the tag-time release gate, CLI↔UI parity, secret-scan,
+  and the commit-msg hygiene hook — so release quality is mechanical
+  rather than remembered. This skill *checks those gates exist* (the
+  G30 seam at Step 1.0) and *runs the review* every release; the
+  scaffolder *creates* them. Setup-time vs release-time: if Step 1.0
+  finds a gate missing, point the operator at the scaffolder rather
+  than hand-rolling it mid-review.
+- **`doc-runtime-verifier` — the docs-accuracy engine behind G28.**
+  Every shipped doc/wiki command + factual claim must trace to a
+  `doc-runtime-verifier` PASS before tag (the Step 5.C provenance
+  requirement + the Row 19 trace-to-verifier check). This skill
+  orchestrates *when* verification is required; `doc-runtime-verifier`
+  performs the run-it-in-a-sandbox-and-diff verification itself.
+- **`api-gui-parity-tracker` — the typed-frontend parity engine.**
+  For a typed OpenAPI frontend, the G27 cross-surface walk leans on
+  the schema → typed-client drift-gate this skill wires; a passing
+  drift-gate is necessary but not sufficient for GUI coverage (hence
+  the G27 CLI-leaf flag).
 
 ## Reference implementations
 
